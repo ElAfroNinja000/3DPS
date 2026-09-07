@@ -19,3 +19,9 @@
 
 # Android emulator screenshots captured by scripts/android-emu.ps1
 /scripts/.artifacts/
+
+# JetBrains IDE project files
+/.idea/
+
+# Spotify API auth cache (contains a live access/refresh token — do not commit)
+/.cache
