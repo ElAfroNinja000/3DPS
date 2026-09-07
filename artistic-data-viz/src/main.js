@@ -67,26 +67,38 @@ material.onBeforeCompile = (shader) => {
   shader.uniforms.uSelected = uSelected;
 
   shader.vertexShader =
-    'uniform float uTime;\nuniform float uSelected;\nattribute float aId;\nvarying float vFlicker;\nvarying float vSel;\n' +
+    'uniform float uTime;\nuniform float uSelected;\nattribute float aId;\nvarying float vFlicker;\nvarying float vSel;\nvarying float vGlow;\n' +
     shader.vertexShader.replace(
       '#include <begin_vertex>',
       [
         '#include <begin_vertex>',
         'vSel = (abs(aId - uSelected) < 0.5) ? 1.0 : 0.0;',
-        'transformed *= mix(1.0, 2.6, vSel);',        // enlarge the selected sphere
+        // Selected sphere: a gentle "breathing" scale pulse instead of a fixed size.
+        'float selPulse = 2.2 + 0.3 * sin(uTime * 3.5);',
+        'transformed *= mix(1.0, selPulse, vSel);',
         'transformed.y += sin(uTime + aId) * 0.05;',  // vertical floating
-        'vFlicker = 0.1 * sin(uTime * 4.0 + aId);',   // brightness flicker
+        // Organic twinkle: layered sines at different rates/phases so the shimmer
+        // never looks uniform across the cloud.
+        'vFlicker = 0.06 * sin(uTime * 2.3 + aId * 1.7)',
+        '         + 0.05 * sin(uTime * 5.1 + aId * 0.6)',
+        '         + 0.03 * sin(uTime * 11.0 + aId * 2.3);',
+        // Pulse driving the selected sphere\'s glow (0..1), handed to the fragment.
+        'vGlow = 0.5 + 0.5 * sin(uTime * 3.5);',
       ].join('\n')
     );
 
   shader.fragmentShader =
-    'varying float vFlicker;\nvarying float vSel;\n' +
+    'varying float vFlicker;\nvarying float vSel;\nvarying float vGlow;\n' +
     shader.fragmentShader.replace(
       '#include <color_fragment>',
       [
         '#include <color_fragment>',
-        'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vFlicker);', // flicker (may extrapolate)
-        'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vSel);',     // pure white when selected
+        'diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), vFlicker);', // twinkle (may darken/brighten)
+        // Selected: pulse between a brightened tint of its own colour and white
+        // (a lively glow) instead of a flat whiteout, so it stays readable as a
+        // coloured, breathing highlight.
+        'vec3 selGlow = mix(diffuseColor.rgb, vec3(1.0), 0.45 + 0.45 * vGlow);',
+        'diffuseColor.rgb = mix(diffuseColor.rgb, selGlow, vSel);',
       ].join('\n')
     );
 };
@@ -172,19 +184,23 @@ function hideLabel() {
 
 // --- "My Songs" panel: now-playing header + a collapsible play history.
 // The YouTube iframe itself stays hidden; this panel is the only player UI. ---
-const HISTORY_KEY = 'artisticdataviz.history';
-const FAVORITES_KEY = 'artisticdataviz.favorites';
+const HISTORY_KEY = '3dps.history';
+const FAVORITES_KEY = '3dps.favorites';
+// Pre-rename keys (app was called ArtisticDataViz): read as a fallback so
+// existing visitors don't lose their saved history/favorites.
+const HISTORY_KEY_OLD = 'artisticdataviz.history';
+const FAVORITES_KEY_OLD = 'artisticdataviz.favorites';
 const HISTORY_MAX = 50;
 
 let currentTrack = null;
 let history = [];
 let favorites = [];
 try {
-  const saved = JSON.parse(localStorage.getItem(HISTORY_KEY));
+  const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? localStorage.getItem(HISTORY_KEY_OLD));
   if (Array.isArray(saved)) history = saved.slice(0, HISTORY_MAX);
 } catch { /* ignore corrupt/blocked storage */ }
 try {
-  const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY));
+  const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? localStorage.getItem(FAVORITES_KEY_OLD));
   if (Array.isArray(saved)) favorites = saved;
 } catch { /* ignore corrupt/blocked storage */ }
 
