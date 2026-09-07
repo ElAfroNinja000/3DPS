@@ -1,2 +1,2 @@
-# ArtisticDataViz
+# 3DPS
 A data visualization project focused on creating appealing visuals and interactive experiences.

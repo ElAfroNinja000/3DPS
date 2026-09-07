@@ -184,19 +184,23 @@ function hideLabel() {
 
 // --- "My Songs" panel: now-playing header + a collapsible play history.
 // The YouTube iframe itself stays hidden; this panel is the only player UI. ---
-const HISTORY_KEY = 'artisticdataviz.history';
-const FAVORITES_KEY = 'artisticdataviz.favorites';
+const HISTORY_KEY = '3dps.history';
+const FAVORITES_KEY = '3dps.favorites';
+// Pre-rename keys (app was called ArtisticDataViz): read as a fallback so
+// existing visitors don't lose their saved history/favorites.
+const HISTORY_KEY_OLD = 'artisticdataviz.history';
+const FAVORITES_KEY_OLD = 'artisticdataviz.favorites';
 const HISTORY_MAX = 50;
 
 let currentTrack = null;
 let history = [];
 let favorites = [];
 try {
-  const saved = JSON.parse(localStorage.getItem(HISTORY_KEY));
+  const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? localStorage.getItem(HISTORY_KEY_OLD));
   if (Array.isArray(saved)) history = saved.slice(0, HISTORY_MAX);
 } catch { /* ignore corrupt/blocked storage */ }
 try {
-  const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY));
+  const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) ?? localStorage.getItem(FAVORITES_KEY_OLD));
   if (Array.isArray(saved)) favorites = saved;
 } catch { /* ignore corrupt/blocked storage */ }
 

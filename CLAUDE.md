@@ -13,7 +13,7 @@ Guidance for Claude Code when working in this repository.
 
 ## Project overview
 
-**ArtisticDataViz** is an interactive, artistic 3D visualization of Spotify track
+**3DPS** is an interactive, artistic 3D visualization of Spotify track
 data. It has two distinct halves:
 
 1. **Python data pipeline** — cleans raw Spotify data, clusters it, and reduces it
